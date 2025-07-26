@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manajemen Pasien Rumah Sakit</title>
+    <!-- Memuat Tailwind CSS untuk styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Memuat Font Inter dari Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Menggunakan font Inter sebagai default */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Style untuk modal agar terlihat lebih baik */
+        .modal-backdrop {
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800">
+
+    <div class="container mx-auto p-4 sm:p-6 lg:p-8">
+        <header class="mb-8 text-center">
+            <h1 class="text-3xl sm:text-4xl font-bold text-gray-900">Dashboard Manajemen Pasien</h1>
+            <p class="text-gray-600 mt-2">Aplikasi CRUD sederhana untuk mengelola data pasien.</p>
+        </header>
+
+        <main class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Kolom Form untuk Create/Update -->
+            <div class="lg:col-span-1 bg-white p-6 rounded-xl shadow-lg">
+                <h2 id="form-title" class="text-2xl font-semibold mb-4">Tambah Pasien Baru</h2>
+                <!-- Form untuk input data pasien -->
+                <form id="patient-form" class="space-y-4">
+                    <!-- Hidden input untuk menyimpan ID saat mode edit -->
+                    <input type="hidden" id="patient-id">
+                    
+                    <div>
+                        <label for="name" class="block text-sm font-medium text-gray-700">Nama Lengkap</label>
+                        <input type="text" id="name" name="name" required class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                    </div>
+                    
+                    <div>
+                        <label for="birth_date" class="block text-sm font-medium text-gray-700">Tanggal Lahir</label>
+                        <input type="date" id="birth_date" name="birth_date" required class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                    </div>
+
+                    <div>
+                        <label for="gender" class="block text-sm font-medium text-gray-700">Jenis Kelamin</label>
+                        <select id="gender" name="gender" required class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                            <option value="L">Laki-laki</option>
+                            <option value="P">Perempuan</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="phone" class="block text-sm font-medium text-gray-700">Nomor Telepon</label>
+                        <input type="tel" id="phone" name="phone" required class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                    </div>
+
+                    <div class="flex items-center space-x-4 pt-2">
+                         <button type="submit" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">Simpan</button>
+                         <button type="button" id="cancel-edit" class="w-full hidden justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">Batal</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Kolom Tabel untuk Read -->
+            <div class="lg:col-span-2 bg-white p-6 rounded-xl shadow-lg overflow-x-auto">
+                <h2 class="text-2xl font-semibold mb-4">Daftar Pasien</h2>
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tanggal Lahir</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gender</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Telepon</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="patient-table-body" class="bg-white divide-y divide-gray-200">
+                        <!-- Data pasien akan dimasukkan di sini oleh JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal Konfirmasi Hapus -->
+    <div id="delete-modal" class="fixed z-10 inset-0 overflow-y-auto hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div class="fixed inset-0 modal-backdrop transition-opacity" aria-hidden="true"></div>
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+            <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                    <div class="sm:flex sm:items-start">
+                        <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
+                            <!-- Ikon Peringatan -->
+                            <svg class="h-6 w-6 text-red-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                            </svg>
+                        </div>
+                        <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+                            <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">Hapus Pasien</h3>
+                            <div class="mt-2">
+                                <p class="text-sm text-gray-500">Apakah Anda yakin ingin menghapus data pasien ini? Aksi ini tidak dapat dibatalkan.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                    <button type="button" id="confirm-delete" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none sm:ml-3 sm:w-auto sm:text-sm">Hapus</button>
+                    <button type="button" id="cancel-delete" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">Batal</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        // --- SIMULASI DATABASE ---
+        // Di aplikasi nyata, data ini akan diambil dari database MySQL Anda melalui backend (misalnya PHP/Laravel).
+        // Kita menggunakan array JavaScript ini untuk mensimulasikan data dari tabel 'patients'.
+        let patients = [
+            { id: 1, name: 'Janwi Ganda Tampubolon S.Sos', birth_date: '1986-06-14', gender: 'L', phone: '(+62) 620 4646 9740' },
+            { id: 2, name: 'Fitriani Tiara Namaga S.H.', birth_date: '2014-06-03', gender: 'P', phone: '021 3015 2754' },
+            { id: 3, name: 'Kiandra Mardhiyah', birth_date: '2018-09-09', gender: 'P', phone: '0367 6075 9986' },
+            { id: 4, name: 'Wulan Puspa Laksita S.Sos', birth_date: '1990-05-23', gender: 'P', phone: '(+62) 957 7161 090' },
+            { id: 5, name: 'Paiman Natsir', birth_date: '1978-07-12', gender: 'P', phone: '0404 8153 132' }
+        ];
+        let nextId = 6; // Untuk simulasi AUTO_INCREMENT
+
+        // --- ELEMEN DOM ---
+        const form = document.getElementById('patient-form');
+        const tableBody = document.getElementById('patient-table-body');
+        const formTitle = document.getElementById('form-title');
+        const patientIdInput = document.getElementById('patient-id');
+        const cancelEditButton = document.getElementById('cancel-edit');
+        const deleteModal = document.getElementById('delete-modal');
+        const confirmDeleteButton = document.getElementById('confirm-delete');
+        const cancelDeleteButton = document.getElementById('cancel-delete');
+        let patientIdToDelete = null;
+
+        // --- FUNGSI-FUNGSI CRUD ---
+
+        /**
+         * READ: Menampilkan semua data pasien ke dalam tabel HTML.
+         * Di aplikasi nyata, fungsi ini akan dipanggil setelah mengambil data dari backend.
+         */
+        function displayPatients() {
+            tableBody.innerHTML = ''; // Kosongkan tabel sebelum diisi ulang
+            patients.forEach(patient => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${patient.name}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${patient.birth_date}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${patient.gender === 'L' ? 'Laki-laki' : 'Perempuan'}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${patient.phone}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
+                        <button onclick="editPatient(${patient.id})" class="text-indigo-600 hover:text-indigo-900">Edit</button>
+                        <button onclick="promptDelete(${patient.id})" class="text-red-600 hover:text-red-900">Hapus</button>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        /**
+         * Menangani submit form untuk CREATE atau UPDATE.
+         */
+        form.addEventListener('submit', function(event) {
+            event.preventDefault(); // Mencegah form dari reload halaman
+            
+            const id = patientIdInput.value;
+            const patientData = {
+                name: document.getElementById('name').value,
+                birth_date: document.getElementById('birth_date').value,
+                gender: document.getElementById('gender').value,
+                phone: document.getElementById('phone').value
+            };
+
+            if (id) {
+                // UPDATE: Jika ada ID, berarti kita dalam mode edit.
+                // Di aplikasi nyata, ini akan mengirim request 'PUT' atau 'PATCH' ke backend.
+                const index = patients.findIndex(p => p.id == id);
+                if (index !== -1) {
+                    patients[index] = { id: parseInt(id), ...patientData };
+                }
+            } else {
+                // CREATE: Jika tidak ada ID, berarti kita membuat data baru.
+                // Di aplikasi nyata, ini akan mengirim request 'POST' ke backend.
+                patients.push({ id: nextId++, ...patientData });
+            }
+
+            resetForm();
+            displayPatients();
+        });
+        
+        /**
+         * UPDATE (Langkah 1): Mempersiapkan form untuk mode edit.
+         * Mengisi form dengan data pasien yang akan diubah.
+         */
+        function editPatient(id) {
+            const patient = patients.find(p => p.id === id);
+            if (patient) {
+                formTitle.textContent = 'Edit Data Pasien';
+                patientIdInput.value = patient.id;
+                document.getElementById('name').value = patient.name;
+                document.getElementById('birth_date').value = patient.birth_date;
+                document.getElementById('gender').value = patient.gender;
+                document.getElementById('phone').value = patient.phone;
+                cancelEditButton.classList.remove('hidden');
+            }
+        }
+
+        /**
+         * DELETE (Langkah 1): Menampilkan modal konfirmasi.
+         */
+        function promptDelete(id) {
+            patientIdToDelete = id;
+            deleteModal.classList.remove('hidden');
+        }
+
+        /**
+         * DELETE (Langkah 2): Menghapus data setelah konfirmasi.
+         */
+        confirmDeleteButton.addEventListener('click', function() {
+            if (patientIdToDelete !== null) {
+                // Di aplikasi nyata, ini akan mengirim request 'DELETE' ke backend.
+                patients = patients.filter(p => p.id !== patientIdToDelete);
+                patientIdToDelete = null;
+                deleteModal.classList.add('hidden');
+                displayPatients();
+            }
+        });
+
+        /**
+         * Membatalkan proses hapus.
+         */
+        cancelDeleteButton.addEventListener('click', function() {
+            patientIdToDelete = null;
+            deleteModal.classList.add('hidden');
+        });
+
+        /**
+         * Mengembalikan form ke kondisi awal (mode tambah).
+         */
+        function resetForm() {
+            form.reset();
+            formTitle.textContent = 'Tambah Pasien Baru';
+            patientIdInput.value = '';
+            cancelEditButton.classList.add('hidden');
+        }
+
+        // Event listener untuk tombol "Batal" pada mode edit.
+        cancelEditButton.addEventListener('click', resetForm);
+
+        // --- INISIALISASI ---
+        // Menampilkan data pasien saat halaman pertama kali dimuat.
+        document.addEventListener('DOMContentLoaded', displayPatients);
+
+    </script>
+</body>
+</html>
